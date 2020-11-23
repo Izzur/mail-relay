@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"net/smtp"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,5 +20,16 @@ func health(c *gin.Context) {
 }
 
 func sendSMTP(c *gin.Context) {
+	s, err := smtp.Dial("localhost:2525")
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(500, gin.H{})
+	}
+	fmt.Println(s)
+	err = s.Quit()
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(500, gin.H{})
+	}
 	c.JSON(202, c.Request.Body)
 }
