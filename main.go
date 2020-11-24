@@ -20,16 +20,18 @@ func health(c *gin.Context) {
 }
 
 func sendSMTP(c *gin.Context) {
-	s, err := smtp.Dial("localhost:2525")
+	user := ""
+	pass := ""
+	host := "smtp.mailtrap.io"
+	auth := smtp.PlainAuth("", user, pass, host)
+	to := []string{"recipient@example.net"}
+	msg := []byte("To: recipient@example.net\r\n" +
+		"Subject: discount Gophers!\r\n" +
+		"\r\n" +
+		"This is the email body.\r\n")
+	err := smtp.SendMail(host+":2525", auth, "sender@example.org", to, msg)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(500, gin.H{})
-	}
-	fmt.Println(s)
-	err = s.Quit()
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(500, gin.H{})
 	}
 	c.JSON(202, c.Request.Body)
 }
