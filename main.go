@@ -1,13 +1,20 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
-	"net/smtp"
 	"os"
-	"strings"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"gopkg.in/gomail.v2"
+)
+
+var (
+	user = os.Getenv("MAIL_RELAY_SMTP_USER")
+	pass = os.Getenv("MAIL_RELAY_SMTP_PASS")
+	host = os.Getenv("MAIL_RELAY_SMTP_HOST")
+	port = os.Getenv("MAIL_RELAY_SMTP_PORT")
+	from = os.Getenv("MAIL_RELAY_FROM_EMAIL")
 )
 
 func main() {
@@ -23,6 +30,7 @@ func health(c *gin.Context) {
 }
 
 func sendgrid(c *gin.Context) {
+	// sendMail()
 	c.JSON(http.StatusNotImplemented, gin.H{})
 }
 
@@ -40,28 +48,16 @@ func sendinblue(c *gin.Context) {
 }
 
 func sendMail(to []string, cc []string, subject, message string) error {
-	user := os.Getenv("MAIL_RELAY_SMTP_USER")
-	pass := os.Getenv("MAIL_RELAY_SMTP_PASS")
-	host := os.Getenv("MAIL_RELAY_SMTP_HOST")
-	port := os.Getenv("MAIL_RELAY_SMTP_PORT")
-	fromName := os.Getenv("MAIL_RELAY_FROM_NAME")
-	fromEmail := os.Getenv("MAIL_RELAY_FROM_EMAIL")
+	m := gomail.NewMessage()
+	m.SetHeader("From", from)
+	m.SetHeader("To", to[0])
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", message)
 
-	body := "From: " + fromName + "\n" +
-		"To: " + strings.Join(to, ",") + "\n" +
-		"Cc: " + strings.Join(cc, ",") + "\n" +
-		"Subject: " + subject + "\n\n" +
-		message
-
-	auth := smtp.PlainAuth("", user, pass, host)
-	smtpAddr := fmt.Sprintf("%s:%s", host, port)
-
-	err := smtp.SendMail(smtpAddr, auth, fromEmail, append(to, cc...), []byte(body))
-	if err != nil {
-		return err
-	}
-
-	return nil
+	port, _ := strconv.Atoi(port)
+	d := gomail.NewDialer(host, port, user, pass)
+	err := d.DialAndSend(m)
+	return err
 }
 
 func mapPersonToEmail(person []Person) []string {
