@@ -30,8 +30,16 @@ func health(c *gin.Context) {
 }
 
 func sendgrid(c *gin.Context) {
-	// sendMail()
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	var body Sendgrid
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	to := mapPersonToEmail(body.Personalizations[0].To)
+	cc := []string{}
+	sendMail(to, cc, body.Subject, body.Content.Value)
+	c.JSON(http.StatusAccepted, gin.H{})
 }
 
 func sendinblue(c *gin.Context) {
@@ -79,4 +87,23 @@ type Sendinblue struct {
 	To          []Person `json:"to"`
 	Subject     string   `json:"subject"`
 	HTMLContent string   `json:"htmlContent"`
+}
+
+// Sendgrid request body
+type Sendgrid struct {
+	Personalizations []Personalizations `json:"personalizations"`
+	From             Person             `json:"from"`
+	Subject          string             `json:"subject"`
+	Content          SendgridContent    `json:"content"`
+}
+
+// Personalizations for Sendgrid
+type Personalizations struct {
+	To []Person `json:"to"`
+}
+
+// SendgridContent for email body
+type SendgridContent struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
