@@ -84,7 +84,8 @@ func sendgrid(c *gin.Context) {
 	}
 	to := mapPersonToEmail(body.Personalizations[0].To)
 	cc := []string{}
-	sendMailv2(to, cc, body.Personalizations[0].Subject, body.Content[0].Value, body.Attanctment[0])
+
+	sendMailv2(to, cc, body.Personalizations[0].Subject, body.Content[0].Value, body.Attanctment)
 	c.JSON(200, gin.H{"status": "OK"})
 }
 
@@ -100,24 +101,7 @@ func sendinblue(c *gin.Context) {
 	sendMail(to, cc, body.Subject, body.HTMLContent)
 	c.JSON(http.StatusAccepted, gin.H{})
 }
-func sendMailv2(to []string, cc []string, subject, message string, base ChildAttactment) {
-	dec, err1 := base64.StdEncoding.DecodeString(base.Content)
-	if err1 != nil {
-		panic(err1)
-	}
-
-	f, err1 := os.Create(base.Filename + "." + base.Type)
-	if err1 != nil {
-		panic(err1)
-	}
-	defer f.Close()
-
-	if _, err := f.Write(dec); err != nil {
-		panic(err)
-	}
-	if err := f.Sync(); err != nil {
-		panic(err)
-	}
+func sendMailv2(to []string, cc []string, subject, message string, base []ChildAttactment) {
 
 	to = []string{to[0]}
 	m := gomail.NewMessage()
@@ -125,17 +109,39 @@ func sendMailv2(to []string, cc []string, subject, message string, base ChildAtt
 	m.SetHeader("To", to[0])
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", message)
-	m.Attach("./" + base.Filename + "." + base.Type)
+	if len(base) > 0 {
+		dec, err1 := base64.StdEncoding.DecodeString(base[0].Content)
+		if err1 != nil {
+			panic(err1)
+		}
 
+		f, err1 := os.Create(base[0].Filename + "." + base[0].Type)
+		if err1 != nil {
+			panic(err1)
+		}
+		defer f.Close()
+
+		if _, err := f.Write(dec); err != nil {
+			panic(err)
+		}
+		if err := f.Sync(); err != nil {
+			panic(err)
+		}
+		m.Attach("./" + base[0].Filename + "." + base[0].Type)
+
+	}
 	d := gomail.NewPlainDialer(host, 2525, user, pass)
 
 	if err := d.DialAndSend(m); err != nil {
 		log.Println(err)
 	}
-	e := os.Remove("./" + base.Filename + "." + base.Type)
-	if e != nil {
-		log.Fatal(e)
+	if len(base) > 0 {
+		e := os.Remove("./" + base[0].Filename + "." + base[0].Type)
+		if e != nil {
+			log.Fatal(e)
+		}
 	}
+
 }
 
 func sendMail(to []string, cc []string, subject, message string) error {
