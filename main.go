@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/base64"
 	"log"
 	"net/http"
-	"net/smtp"
 	"os"
 	"strconv"
 	"strings"
@@ -84,8 +84,8 @@ func sendgrid(c *gin.Context) {
 	}
 	to := mapPersonToEmail(body.Personalizations[0].To)
 	cc := []string{}
-	sendMailv2(to, cc, body.Personalizations[0].Subject, body.Content[0].Value)
-	c.JSON(http.StatusAccepted, gin.H{})
+	sendMailv2(to, cc, body.Personalizations[0].Subject, body.Content[0].Value, body.Attanctment[0])
+	c.JSON(200, gin.H{"status": "OK"})
 }
 
 func sendinblue(c *gin.Context) {
@@ -100,19 +100,41 @@ func sendinblue(c *gin.Context) {
 	sendMail(to, cc, body.Subject, body.HTMLContent)
 	c.JSON(http.StatusAccepted, gin.H{})
 }
-func sendMailv2(to []string, cc []string, subject, message string) {
-	auth := smtp.PlainAuth("", user, pass, host)
+func sendMailv2(to []string, cc []string, subject, message string, base ChildAttactment) {
+	dec, err1 := base64.StdEncoding.DecodeString(base.Content)
+	if err1 != nil {
+		panic(err1)
+	}
+
+	f, err1 := os.Create(base.Filename + "." + base.Type)
+	if err1 != nil {
+		panic(err1)
+	}
+	defer f.Close()
+
+	if _, err := f.Write(dec); err != nil {
+		panic(err)
+	}
+	if err := f.Sync(); err != nil {
+		panic(err)
+	}
 
 	to = []string{to[0]}
-	msg := []byte("From:" + from + "\r\n" +
-		"To: " + to[0] + "\r\n" +
-		"Subject: " + subject + "\r\n" +
-		"MIME-Version: 1.0\r\n" +
-		"Content-Type: text/html; charset=\"utf-8\"\r\n\r\n" +
-		"\r\n" + message + "\r\n")
-	err := smtp.SendMail(host+":"+port, auth, from, to, msg)
-	if err != nil {
-		log.Fatal(err)
+	m := gomail.NewMessage()
+	m.SetHeader("From", from)
+	m.SetHeader("To", to[0])
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/html", message)
+	m.Attach("./" + base.Filename + "." + base.Type)
+
+	d := gomail.NewPlainDialer(host, 2525, user, pass)
+
+	if err := d.DialAndSend(m); err != nil {
+		log.Println(err)
+	}
+	e := os.Remove("./" + base.Filename + "." + base.Type)
+	if e != nil {
+		log.Fatal(e)
 	}
 }
 
@@ -156,6 +178,7 @@ type Sendgrid struct {
 	From             Person             `json:"from"`
 	Subject          string             `json:"subject"`
 	Content          []SendgridContent  `json:"content"`
+	Attanctment      []ChildAttactment  `json:"attachments"`
 }
 
 // Personalizations for Sendgrid
@@ -168,4 +191,10 @@ type Personalizations struct {
 type SendgridContent struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
+}
+
+type ChildAttactment struct {
+	Content  string `json:"content"`
+	Type     string `json:"type"`
+	Filename string `json:"filename"`
 }
