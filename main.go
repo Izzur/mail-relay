@@ -107,6 +107,8 @@ func sendMailv2(to []string, cc []string, subject, message string) {
 	msg := []byte("From:" + from + "\r\n" +
 		"To: " + to[0] + "\r\n" +
 		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/html; charset=\"utf-8\"\r\n\r\n" +
 		"\r\n" + message + "\r\n")
 	err := smtp.SendMail(host+":"+port, auth, from, to, msg)
 	if err != nil {
