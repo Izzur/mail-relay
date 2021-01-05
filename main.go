@@ -190,7 +190,7 @@ type Sendgrid struct {
 // Personalizations for Sendgrid
 type Personalizations struct {
 	To      []Person `json:"to"`
-	Subject string   `json:subject`
+	Subject string   `json:"subject"`
 }
 
 // SendgridContent for email body
