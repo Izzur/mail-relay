@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -115,7 +116,7 @@ func sendMailv2(to []string, cc []string, subject, message string, base []ChildA
 			panic(err1)
 		}
 
-		f, err1 := os.Create(base[0].Filename + "." + base[0].Type)
+		f, err1 := os.Create(fmt.Sprintf("%s.%s", base[0].Filename, base[0].Type))
 		if err1 != nil {
 			panic(err1)
 		}
@@ -127,7 +128,7 @@ func sendMailv2(to []string, cc []string, subject, message string, base []ChildA
 		if err := f.Sync(); err != nil {
 			panic(err)
 		}
-		m.Attach("./" + base[0].Filename + "." + base[0].Type)
+		m.Attach(fmt.Sprintf("./%s.%s", base[0].Filename, base[0].Type))
 
 	}
 	d := gomail.NewPlainDialer(host, 2525, user, pass)
@@ -136,7 +137,7 @@ func sendMailv2(to []string, cc []string, subject, message string, base []ChildA
 		log.Println(err)
 	}
 	if len(base) > 0 {
-		e := os.Remove("./" + base[0].Filename + "." + base[0].Type)
+		e := os.Remove(fmt.Sprintf("./%s.%s", base[0].Filename, base[0].Type))
 		if e != nil {
 			log.Fatal(e)
 		}
