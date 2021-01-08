@@ -24,35 +24,42 @@ var (
 
 func init() {
 	// loads values from .env into the system
-	if err := godotenv.Load(); err != nil {
-		log.Print("No .env file found")
-	}
-	userName, exists := os.LookupEnv("USERNAMEEMAIL")
-	if exists {
+	if err := godotenv.Load(); err == nil {
+		userName, exists := os.LookupEnv("USERNAMEEMAIL")
+		if !exists {
+			log.Fatalln("Environment variable should contain USERNAMEEMAIL")
+		}
 		user = userName
 		log.Println(user)
-	}
-	passUser, exists := os.LookupEnv("PASSWORD")
-	if exists {
+
+		passUser, exists := os.LookupEnv("PASSWORD")
+		if !exists {
+			log.Fatalln("Environment variable should contain PASSWORD")
+		}
 		pass = passUser
 		log.Println(pass)
-	}
-	hostUser, exists := os.LookupEnv("HOST")
-	if exists {
+
+		hostUser, exists := os.LookupEnv("HOST")
+		if !exists {
+			log.Fatalln("Environment variable should contain HOST")
+		}
 		host = hostUser
 		log.Println(host)
-	}
-	portUser, exists := os.LookupEnv("PORTEMAIL")
-	if exists {
+
+		portUser, exists := os.LookupEnv("PORTEMAIL")
+		if !exists {
+			log.Fatalln("Environment variable should contain PORTEMAIL")
+		}
 		port = portUser
 		log.Println(port)
-	}
-	formUser, exists := os.LookupEnv("FROM")
-	if exists {
+
+		formUser, exists := os.LookupEnv("FROM")
+		if !exists {
+			log.Fatalln("Environment variable should contain FROM")
+		}
 		from = formUser
 		log.Println(from)
 	}
-
 }
 
 func main() {
