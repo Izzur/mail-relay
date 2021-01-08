@@ -27,35 +27,35 @@ func init() {
 	if err := godotenv.Load(); err == nil {
 		userName, exists := os.LookupEnv("USERNAMEEMAIL")
 		if !exists {
-			log.Fatalln(".env should contain USERNAMEEMAIL")
+			log.Fatalln("Environment variable should contain USERNAMEEMAIL")
 		}
 		user = userName
 		log.Println(user)
 
 		passUser, exists := os.LookupEnv("PASSWORD")
 		if !exists {
-			log.Fatalln(".env should contain PASSWORD")
+			log.Fatalln("Environment variable should contain PASSWORD")
 		}
 		pass = passUser
 		log.Println(pass)
 
 		hostUser, exists := os.LookupEnv("HOST")
 		if !exists {
-			log.Fatalln(".env should contain HOST")
+			log.Fatalln("Environment variable should contain HOST")
 		}
 		host = hostUser
 		log.Println(host)
 
 		portUser, exists := os.LookupEnv("PORTEMAIL")
 		if !exists {
-			log.Fatalln(".env should contain PORTEMAIL")
+			log.Fatalln("Environment variable should contain PORTEMAIL")
 		}
 		port = portUser
 		log.Println(port)
 
 		formUser, exists := os.LookupEnv("FROM")
 		if !exists {
-			log.Fatalln(".env should contain FROM")
+			log.Fatalln("Environment variable should contain FROM")
 		}
 		from = formUser
 		log.Println(from)
