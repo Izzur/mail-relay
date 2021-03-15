@@ -15,50 +15,52 @@ import (
 )
 
 var (
-	user string
-	pass string
-	host string
-	port string
-	from string
+	user      string
+	pass      string
+	host      string
+	port      string
+	from      string
+	relayPort string
 )
 
 func init() {
 	// loads values from .env into the system
 	if err := godotenv.Load(); err == nil {
-		userName, exists := os.LookupEnv("USERNAMEEMAIL")
+		userName, exists := os.LookupEnv("RELAY_SMTP_USER")
 		if !exists {
-			log.Fatalln("Environment variable should contain USERNAMEEMAIL")
+			log.Fatalln("Environment variable should contain RELAY_SMTP_USER")
 		}
 		user = userName
-		log.Println(user)
 
-		passUser, exists := os.LookupEnv("PASSWORD")
+		passUser, exists := os.LookupEnv("RELAY_SMTP_PASS")
 		if !exists {
-			log.Fatalln("Environment variable should contain PASSWORD")
+			log.Fatalln("Environment variable should contain RELAY_SMTP_PASS")
 		}
 		pass = passUser
-		log.Println(pass)
 
-		hostUser, exists := os.LookupEnv("HOST")
+		hostUser, exists := os.LookupEnv("RELAY_SMTP_HOST")
 		if !exists {
-			log.Fatalln("Environment variable should contain HOST")
+			log.Fatalln("Environment variable should contain RELAY_SMTP_HOST")
 		}
 		host = hostUser
-		log.Println(host)
 
-		portUser, exists := os.LookupEnv("PORTEMAIL")
+		portUser, exists := os.LookupEnv("RELAY_SMTP_PORT")
 		if !exists {
-			log.Fatalln("Environment variable should contain PORTEMAIL")
+			log.Fatalln("Environment variable should contain RELAY_SMTP_PORT")
 		}
 		port = portUser
-		log.Println(port)
 
-		formUser, exists := os.LookupEnv("FROM")
+		fromUser, exists := os.LookupEnv("RELAY_FROM_EMAIL")
 		if !exists {
-			log.Fatalln("Environment variable should contain FROM")
+			log.Fatalln("Environment variable should contain RELAY_FROM_EMAIL")
 		}
-		from = formUser
-		log.Println(from)
+		from = fromUser
+
+		portService, exists := os.LookupEnv("RELAY_SERVICE_PORT")
+		if !exists {
+			log.Fatalln("Environment variable should contain RELAY_SERVICE_PORT")
+		}
+		relayPort = portService
 	}
 }
 
@@ -68,7 +70,7 @@ func main() {
 	r.GET("/health", health)
 	r.POST("/api.sendgrid.com/v3/mail/send", sendgrid)
 	r.POST("/api.sendinblue.com/v3/smtp/email", sendinblue)
-	r.Run()
+	r.Run(":" + relayPort)
 }
 
 func hello(c *gin.Context) {
@@ -109,14 +111,15 @@ func sendinblue(c *gin.Context) {
 	sendMail(to, cc, body.Subject, body.HTMLContent)
 	c.JSON(http.StatusAccepted, gin.H{})
 }
-func sendMailv2(to []string, cc []string, subject, message string, base []ChildAttactment) {
 
+func sendMailv2(to []string, cc []string, subject, message string, base []ChildAttactment) {
 	to = []string{to[0]}
 	m := gomail.NewMessage()
 	m.SetHeader("From", from)
 	m.SetHeader("To", to[0])
 	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", message)
+
 	if len(base) > 0 {
 		dec, err1 := base64.StdEncoding.DecodeString(base[0].Content)
 		if err1 != nil {
@@ -136,9 +139,10 @@ func sendMailv2(to []string, cc []string, subject, message string, base []ChildA
 			panic(err)
 		}
 		m.Attach(fmt.Sprintf("./%s.%s", base[0].Filename, base[0].Type))
-
 	}
-	d := gomail.NewPlainDialer(host, 2525, user, pass)
+
+	port, _ := strconv.Atoi(port)
+	d := gomail.NewDialer(host, port, user, pass)
 
 	if err := d.DialAndSend(m); err != nil {
 		log.Println(err)
@@ -198,7 +202,7 @@ type Sendgrid struct {
 // Personalizations for Sendgrid
 type Personalizations struct {
 	To      []Person `json:"to"`
-	Subject string   `json:subject`
+	Subject string   `json:"subject"`
 }
 
 // SendgridContent for email body
